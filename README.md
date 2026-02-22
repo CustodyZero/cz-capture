@@ -1,6 +1,8 @@
+<img src="custodyzero-wordmark-dark.svg" alt="CustodyZero" width="260" />
+
 # cz-capture
 
-**Private — not open source.**
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 AWS Lambda function that receives email signups from CustodyZero landing pages, validates them, deduplicates, and stores them in DynamoDB. No third-party email services. No marketing platforms. Data stays in our AWS account.
 
