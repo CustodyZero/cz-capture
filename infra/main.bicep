@@ -1,12 +1,11 @@
 // main.bicep — Declarative IaC for cz-capture (Azure Functions waitlist endpoint)
 // Replaces: infra/setup.md (manual runbook)
 //
-// Linux Consumption Plan retirement notice:
-//   Microsoft has announced Linux consumption plan (Y1/Dynamic) retirement on 30 September 2028.
-//   No new language runtimes will be added after 30 September 2025, but Node.js 20 is in the
-//   supported set. When the retirement date approaches, migrate hostingPlan to Flex Consumption:
-//   change sku.name to 'FC1', sku.tier to 'FlexConsumption', and functionApp kind to
-//   'functionapp,linux' with the new functionAppConfig block. The app settings structure stays the same.
+// Hosting plan: Windows consumption (Y1/Dynamic).
+// Originally designed for Linux consumption, but Linux Dynamic plans require a subscription-level
+// quota (Dynamic VMs) that is 0 on some subscription types. Windows consumption uses the same
+// Y1/Dynamic SKU and pricing with no such quota requirement. The function code is pure Node.js
+// with no OS-specific dependencies and runs identically on Windows.
 
 targetScope = 'resourceGroup'
 
@@ -62,8 +61,8 @@ resource waitlistTable 'Microsoft.Storage/storageAccounts/tableServices/tables@2
   name: 'waitlist'
 }
 
-// Linux Consumption plan. sku Y1/Dynamic = consumption pricing.
-// reserved: true is required for Linux — without it the plan is provisioned as Windows.
+// Windows consumption plan. Y1/Dynamic = consumption pricing.
+// No reserved: true — that flag is Linux-only.
 resource hostingPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: hostingPlanName
   location: location
@@ -71,23 +70,18 @@ resource hostingPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
     name: 'Y1'
     tier: 'Dynamic'
   }
-  properties: {
-    reserved: true
-  }
 }
 
 resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   name: functionAppName
   location: location
-  kind: 'functionapp,linux'
+  kind: 'functionapp'
   properties: {
     serverFarmId: hostingPlan.id
     httpsOnly: true
     siteConfig: {
-      linuxFxVersion: 'NODE|20'
-      // WEBSITE_CONTENTAZUREFILECONNECTIONSTRING and WEBSITE_CONTENTSHARE are intentionally
-      // excluded. Microsoft documentation confirms these are NOT required for Linux consumption
-      // plans and can cause deployment failures if set.
+      // use32BitWorkerProcess: false — Node.js 20 requires 64-bit on Windows.
+      use32BitWorkerProcess: false
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
@@ -100,6 +94,10 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
           value: 'node'
+        }
+        {
+          name: 'WEBSITE_NODE_DEFAULT_VERSION'
+          value: '~20'
         }
         {
           name: 'AZURE_STORAGE_CONNECTION_STRING'
