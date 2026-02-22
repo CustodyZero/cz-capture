@@ -1,0 +1,64 @@
+name: Deploy Infrastructure
+
+# Triggers on changes to the Bicep templates or parameters.
+# Also available as a manual trigger for forced re-deploys.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+  workflow_dispatch:
+
+# OIDC requires id-token: write so the runner can request a token from GitHub's OIDC provider.
+# contents: read is the minimum for checkout.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Bicep
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # az bicep install ensures the Bicep CLI is available on the runner.
+      # The Azure CLI on ubuntu-latest includes Bicep support but this makes it explicit.
+      - name: Install Bicep CLI
+        run: az bicep install
+
+      # az group create is idempotent — safe to run on every deploy.
+      - name: Ensure resource group exists
+        run: |
+          az group create \
+            --name cz-capture-rg \
+            --location eastus2 \
+            --output none
+
+      # What-if runs before the actual deploy and prints a diff of all changes.
+      # This step is informational: its output is visible in the Actions log.
+      # The deploy step below runs unconditionally — the push to main is the approval gate.
+      - name: What-if preview
+        run: |
+          az deployment group what-if \
+            --resource-group cz-capture-rg \
+            --template-file infra/main.bicep \
+            --parameters @infra/main.bicepparam
+
+      - name: Deploy
+        run: |
+          az deployment group create \
+            --resource-group cz-capture-rg \
+            --template-file infra/main.bicep \
+            --parameters @infra/main.bicepparam \
+            --output table

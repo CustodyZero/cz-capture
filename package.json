@@ -1,0 +1,18 @@
+{
+  "name": "cz-capture",
+  "version": "1.0.0",
+  "description": "CustodyZero waitlist capture — Azure Functions app",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start",
+    "deploy": "func azure functionapp publish cz-capture-func",
+    "infra:deploy": "bash infra/deploy.sh"
+  },
+  "dependencies": {
+    "@azure/data-tables": "^13.3.0",
+    "@azure/functions": "^4.5.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
