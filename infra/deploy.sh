@@ -30,4 +30,4 @@ echo ""
 echo "==> Deploying (SAM will show the changeset for confirmation)..."
 sam deploy \
   --template-file infra/template.yaml \
-  --config-file infra/samconfig.toml
+  --config-file samconfig.toml

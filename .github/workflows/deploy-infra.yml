@@ -45,6 +45,6 @@ jobs:
         run: |
           sam deploy \
             --template-file infra/template.yaml \
-            --config-file infra/samconfig.toml \
+            --config-file samconfig.toml \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset
