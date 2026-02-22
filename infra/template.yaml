@@ -40,6 +40,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     # Retain keeps the table (and all data) if the CloudFormation stack is deleted.
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       TableName: cz-capture-waitlist
       BillingMode: PAY_PER_REQUEST
