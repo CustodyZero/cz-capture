@@ -1,11 +1,11 @@
 // main.bicep — Declarative IaC for cz-capture (Azure Functions waitlist endpoint)
 // Replaces: infra/setup.md (manual runbook)
 //
-// Hosting plan: Windows consumption (Y1/Dynamic).
-// Originally designed for Linux consumption, but Linux Dynamic plans require a subscription-level
-// quota (Dynamic VMs) that is 0 on some subscription types. Windows consumption uses the same
-// Y1/Dynamic SKU and pricing with no such quota requirement. The function code is pure Node.js
-// with no OS-specific dependencies and runs identically on Windows.
+// Hosting plan: Windows B1 Basic App Service Plan.
+// Consumption (Y1/Dynamic) plans are blocked by a Dynamic VM quota of 0 on this subscription.
+// B1 is always-on (~$13/month), no quota restrictions, no cold starts. At waitlist scale the
+// cost difference vs consumption is negligible. Can switch back to consumption if quota is ever
+// granted — two-line change in the hostingPlan sku block.
 
 targetScope = 'resourceGroup'
 
@@ -61,14 +61,13 @@ resource waitlistTable 'Microsoft.Storage/storageAccounts/tableServices/tables@2
   name: 'waitlist'
 }
 
-// Windows consumption plan. Y1/Dynamic = consumption pricing.
-// No reserved: true — that flag is Linux-only.
+// B1 Basic App Service Plan (Windows).
 resource hostingPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: hostingPlanName
   location: location
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
+    name: 'B1'
+    tier: 'Basic'
   }
 }
 
