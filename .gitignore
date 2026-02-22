@@ -18,5 +18,8 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# AWS SAM build artifacts
+.aws-sam/
+
 # Claude Code
 .claude/

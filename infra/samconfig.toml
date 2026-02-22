@@ -1,0 +1,15 @@
+# samconfig.toml — SAM deployment configuration for cz-capture
+#
+# This file is committed to version control. It contains no secrets.
+# The DynamoDB table name and function name are in the SAM template.
+# AllowedOrigins is the only parameter — no credentials here.
+
+version = 0.1
+
+[default.deploy.parameters]
+stack_name          = "cz-capture"
+region              = "us-east-1"
+capabilities        = "CAPABILITY_IAM"
+resolve_s3          = true
+confirm_changeset   = true
+parameter_overrides = "AllowedOrigins=https://custodyzero.com,https://www.custodyzero.com"

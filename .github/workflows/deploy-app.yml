@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy Function App
+    name: Deploy Lambda Function Code
     runs-on: ubuntu-latest
 
     steps:
@@ -33,37 +33,31 @@ jobs:
 
       # npm ci uses package-lock.json for a deterministic, reproducible install.
       # --omit=dev excludes devDependencies from the deployment artifact.
-      # This project has no devDependencies but the flag is explicit for correctness.
       - name: Install production dependencies
         run: npm ci --omit=dev
 
-      - name: Azure login (OIDC)
-        uses: azure/login@v2
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
 
-      # Create a zip of exactly the files the runtime needs.
-      # Excluded: infra/, .github/, README.md, local settings files, and any prior zip artifact.
-      # node_modules is included so the deployed package is self-contained — no remote build dependency.
+      # Self-contained zip: node_modules included so Lambda has no remote build dependency.
       - name: Create deployment package
         run: |
           zip -r function.zip . \
             --exclude ".git/*" \
             --exclude ".github/*" \
             --exclude ".claude/*" \
+            --exclude ".aws-sam/*" \
             --exclude "infra/*" \
             --exclude "README.md" \
             --exclude ".gitignore" \
-            --exclude "local.settings.json" \
-            --exclude "local.settings.json.example" \
+            --exclude ".env*" \
             --exclude "function.zip"
 
-      - name: Deploy to Azure Functions
+      - name: Deploy to Lambda
         run: |
-          az functionapp deploy \
-            --resource-group cz-capture-rg \
-            --name cz-capture-func \
-            --src-path function.zip \
-            --type zip
+          aws lambda update-function-code \
+            --function-name cz-capture-func \
+            --zip-file fileb://function.zip

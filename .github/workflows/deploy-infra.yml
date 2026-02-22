@@ -1,6 +1,6 @@
 name: Deploy Infrastructure
 
-# Triggers on changes to the Bicep templates or parameters.
+# Triggers on changes to the SAM template or parameters.
 # Also available as a manual trigger for forced re-deploys.
 on:
   push:
@@ -18,45 +18,33 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy Bicep
+    name: Deploy SAM Stack
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Azure login (OIDC)
-        uses: azure/login@v2
+      - name: Set up SAM CLI
+        uses: aws-actions/setup-sam@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          use-installer: true
 
-      # az bicep install ensures the Bicep CLI is available on the runner.
-      # The Azure CLI on ubuntu-latest includes Bicep support but this makes it explicit.
-      - name: Install Bicep CLI
-        run: az bicep install
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
 
-      # az group create is idempotent — safe to run on every deploy.
-      - name: Ensure resource group exists
-        run: |
-          az group create \
-            --name cz-capture-rg \
-            --location eastus2 \
-            --output none
+      - name: Validate template
+        run: sam validate --template infra/template.yaml --lint
 
-      # What-if runs before the actual deploy and prints a diff of all changes.
-      # This step is informational: its output is visible in the Actions log.
-      # The deploy step below runs unconditionally — the push to main is the approval gate.
-      - name: What-if preview
-        run: |
-          az deployment group what-if \
-            --resource-group cz-capture-rg \
-            --parameters infra/main.bicepparam
-
+      # --no-confirm-changeset applies changes without prompting — the push to main is the gate.
+      # --no-fail-on-empty-changeset exits cleanly when there is nothing to change.
       - name: Deploy
         run: |
-          az deployment group create \
-            --resource-group cz-capture-rg \
-            --parameters infra/main.bicepparam \
-            --output table
+          sam deploy \
+            --template-file infra/template.yaml \
+            --config-file infra/samconfig.toml \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset

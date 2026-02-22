@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: cz-capture — CustodyZero waitlist endpoint (Lambda + DynamoDB)
+
+Parameters:
+  AllowedOrigins:
+    Type: String
+    Description: Comma-separated list of allowed CORS origins
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Environment:
+      Variables:
+        NODE_ENV: production
+        ALLOWED_ORIGINS: !Ref AllowedOrigins
+        WAITLIST_TABLE: !Ref WaitlistTable
+
+Resources:
+
+  WaitlistFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: cz-capture-func
+      # CodeUri is the project root — handler path is relative to it.
+      CodeUri: ./
+      Handler: src/functions/waitlist.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WaitlistTable
+      FunctionUrlConfig:
+        AuthType: NONE
+        # CORS is handled entirely in the function handler to enforce the origin allowlist.
+        # Omitting the Cors block here means Lambda forwards all methods (including OPTIONS)
+        # directly to the function without interception.
+
+  WaitlistTable:
+    Type: AWS::DynamoDB::Table
+    # Retain keeps the table (and all data) if the CloudFormation stack is deleted.
+    DeletionPolicy: Retain
+    Properties:
+      TableName: cz-capture-waitlist
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+
+Outputs:
+
+  WaitlistFunctionUrl:
+    Description: Lambda Function URL — the /api/waitlist endpoint
+    Value: !GetAtt WaitlistFunctionUrl.FunctionUrl
+
+  WaitlistTableName:
+    Description: DynamoDB table name
+    Value: !Ref WaitlistTable

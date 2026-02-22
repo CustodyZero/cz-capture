@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# deploy.sh — Deploy or update cz-capture infrastructure using Bicep
+# deploy.sh — Deploy cz-capture via AWS SAM (infrastructure + function code)
 #
-# This script is idempotent. Re-running it is safe — it will show a what-if diff
-# of any changes and prompt before applying them.
+# SAM deploys the full CloudFormation stack: DynamoDB table, Lambda function,
+# IAM execution role, and Function URL. It will show a changeset before applying.
 #
 # Prerequisites:
-#   - Azure CLI installed: az --version
-#   - Logged in: az login
-#   - Correct subscription selected: az account show
+#   - AWS CLI installed: aws --version
+#   - SAM CLI installed: sam --version
+#   - AWS credentials configured: aws sts get-caller-identity
 #
 # Usage:
 #   bash infra/deploy.sh
@@ -16,41 +16,18 @@
 
 set -euo pipefail
 
-RESOURCE_GROUP="cz-capture-rg"
-LOCATION="eastus2"
-PARAMS="infra/main.bicepparam"
-
 # Ensure this script is run from the project root (where package.json lives),
-# so that the template and params paths resolve correctly.
+# so that CodeUri and handler paths in the template resolve correctly.
 if [[ ! -f "package.json" ]]; then
   echo "Error: run this script from the project root (directory containing package.json)." >&2
   exit 1
 fi
 
-echo "==> Ensuring resource group exists: $RESOURCE_GROUP"
-az group create \
-  --name "$RESOURCE_GROUP" \
-  --location "$LOCATION" \
-  --output none
+echo "==> Validating SAM template..."
+sam validate --template infra/template.yaml --lint
 
 echo ""
-echo "==> What-if preview (no changes applied yet):"
-az deployment group what-if \
-  --resource-group "$RESOURCE_GROUP" \
-  --parameters "$PARAMS"
-
-echo ""
-read -r -p "Apply the above changes? [y/N] " confirm
-
-if [[ "$confirm" =~ ^[Yy]$ ]]; then
-  echo ""
-  echo "==> Deploying..."
-  az deployment group create \
-    --resource-group "$RESOURCE_GROUP" \
-    --parameters "$PARAMS" \
-    --output table
-  echo ""
-  echo "==> Infrastructure deployed. Deploy function code with: npm run deploy"
-else
-  echo "Aborted — no changes applied."
-fi
+echo "==> Deploying (SAM will show the changeset for confirmation)..."
+sam deploy \
+  --template-file infra/template.yaml \
+  --config-file infra/samconfig.toml
