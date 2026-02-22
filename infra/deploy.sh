@@ -29,5 +29,4 @@ sam validate --template infra/template.yaml --lint
 echo ""
 echo "==> Deploying (SAM will show the changeset for confirmation)..."
 sam deploy \
-  --template-file infra/template.yaml \
-  --config-file samconfig.toml
+  --template-file infra/template.yaml
