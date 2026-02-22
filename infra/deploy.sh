@@ -18,7 +18,6 @@ set -euo pipefail
 
 RESOURCE_GROUP="cz-capture-rg"
 LOCATION="eastus2"
-TEMPLATE="infra/main.bicep"
 PARAMS="infra/main.bicepparam"
 
 # Ensure this script is run from the project root (where package.json lives),
@@ -38,8 +37,7 @@ echo ""
 echo "==> What-if preview (no changes applied yet):"
 az deployment group what-if \
   --resource-group "$RESOURCE_GROUP" \
-  --template-file "$TEMPLATE" \
-  --parameters "@$PARAMS"
+  --parameters "$PARAMS"
 
 echo ""
 read -r -p "Apply the above changes? [y/N] " confirm
@@ -49,8 +47,7 @@ if [[ "$confirm" =~ ^[Yy]$ ]]; then
   echo "==> Deploying..."
   az deployment group create \
     --resource-group "$RESOURCE_GROUP" \
-    --template-file "$TEMPLATE" \
-    --parameters "@$PARAMS" \
+    --parameters "$PARAMS" \
     --output table
   echo ""
   echo "==> Infrastructure deployed. Deploy function code with: npm run deploy"
