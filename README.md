@@ -161,3 +161,14 @@ aws dynamodb scan \
   --expression-attribute-values '{":s":{"S":"custodyzero.com"}}' \
   --output json | jq -r '[.Items[].email.S]'
 ```
+
+---
+
+## License
+
+The source code in this repository is licensed under [Apache 2.0](LICENSE).
+
+CustodyZero brand assets — including all wordmarks, logomarks, and product
+marks — are all rights reserved and explicitly excluded from this license.
+See the [custodyzero/brand](https://github.com/custodyzero/brand) repository
+for the brand usage policy.
