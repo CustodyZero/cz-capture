@@ -45,5 +45,10 @@ jobs:
         run: |
           sam deploy \
             --template-file infra/template.yaml \
+            --stack-name cz-capture \
+            --region us-east-1 \
+            --capabilities CAPABILITY_IAM \
+            --resolve-s3 \
+            --parameter-overrides "AllowedOrigins=https://custodyzero.com,https://www.custodyzero.com" \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset

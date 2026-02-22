@@ -29,4 +29,10 @@ sam validate --template infra/template.yaml --lint
 echo ""
 echo "==> Deploying (SAM will show the changeset for confirmation)..."
 sam deploy \
-  --template-file infra/template.yaml
+  --template-file infra/template.yaml \
+  --stack-name cz-capture \
+  --region us-east-1 \
+  --capabilities CAPABILITY_IAM \
+  --resolve-s3 \
+  --parameter-overrides "AllowedOrigins=https://custodyzero.com,https://www.custodyzero.com" \
+  --confirm-changeset
