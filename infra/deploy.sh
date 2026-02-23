@@ -34,5 +34,5 @@ sam deploy \
   --region us-east-1 \
   --capabilities CAPABILITY_IAM \
   --resolve-s3 \
-  --parameter-overrides "AllowedOrigins=https://custodyzero.com,https://www.custodyzero.com" \
+  --parameter-overrides "AllowedOrigins=https://custodyzero.com,https://www.custodyzero.com,https://archon.custodyzero.com,https://www.archon.custodyzero.com" \
   --confirm-changeset
