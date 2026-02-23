@@ -36,6 +36,16 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-1
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Required so SAM packages a complete artifact — CodeUri: ./ includes node_modules.
+      - name: Install production dependencies
+        run: npm ci --omit=dev
+
       - name: Validate template
         run: sam validate --template infra/template.yaml --lint
 
@@ -49,6 +59,6 @@ jobs:
             --region us-east-1 \
             --capabilities CAPABILITY_IAM \
             --resolve-s3 \
-            --parameter-overrides "AllowedOrigins=https://custodyzero.com,https://www.custodyzero.com" \
+            --parameter-overrides "AllowedOrigins=https://custodyzero.com,https://www.custodyzero.com,https://archon.custodyzero.com,https://www.archon.custodyzero.com" \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset
