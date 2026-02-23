@@ -7,7 +7,7 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
+      - 'waitlist.js'
   workflow_dispatch:
 
 # OIDC requires id-token: write so the runner can request a token from GitHub's OIDC provider.
