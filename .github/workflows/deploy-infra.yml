@@ -51,7 +51,7 @@ jobs:
 
       # --no-confirm-changeset applies changes without prompting — the push to main is the gate.
       # --no-fail-on-empty-changeset exits cleanly when there is nothing to change.
-      - name: Deploy
+      - name: Deploy infrastructure
         run: |
           sam deploy \
             --template-file infra/template.yaml \
@@ -62,3 +62,24 @@ jobs:
             --parameter-overrides "AllowedOrigins=https://custodyzero.com,https://www.custodyzero.com,https://archon.custodyzero.com,https://www.archon.custodyzero.com" \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset
+
+      # SAM replaces the function's code with its own artifact. Redeploy the correct
+      # code immediately after so the function is never left in a broken state.
+      - name: Create deployment package
+        run: |
+          zip -r function.zip . \
+            --exclude ".git/*" \
+            --exclude ".github/*" \
+            --exclude ".claude/*" \
+            --exclude ".aws-sam/*" \
+            --exclude "infra/*" \
+            --exclude "README.md" \
+            --exclude ".gitignore" \
+            --exclude ".env*" \
+            --exclude "function.zip"
+
+      - name: Deploy function code
+        run: |
+          aws lambda update-function-code \
+            --function-name cz-capture-func \
+            --zip-file fileb://function.zip
